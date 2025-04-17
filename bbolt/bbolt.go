@@ -90,6 +90,28 @@ func (s Store) Delete(k string) error {
 	})
 }
 
+// Keys return all keys in bbolt db
+// TODO need test cases
+func (s Store) Keys() ([]string, error) {
+	var keys []string
+	err := s.db.View(func(tx *bolt.Tx) error {
+		var idx int = 0
+		b := tx.Bucket([]byte(s.bucketName))
+		stats := b.Stats()
+		if stats.KeyN == 0 {
+			return nil
+		}
+		keys = make([]string, stats.KeyN)
+		c := b.Cursor()
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			keys[idx] = string(k)
+			idx += 1
+		}
+		return nil
+	})
+	return keys, err
+}
+
 // Close closes the store.
 // It must be called to make sure that all open transactions finish and to release all DB resources.
 func (s Store) Close() error {
